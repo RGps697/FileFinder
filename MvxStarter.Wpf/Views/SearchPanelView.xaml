@@ -10,7 +10,7 @@
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid>
-        <TextBlock Text="Hello world"></TextBlock>
+        <TextBlock Text=""></TextBlock>
         <TextBox Text="{Binding TextInput, Mode=TwoWay}" Margin="30"></TextBox>
     </Grid>
 </views:MvxWpfView>
