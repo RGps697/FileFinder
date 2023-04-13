@@ -3,6 +3,7 @@ namespace MvxStarter.Core.Services
 {
     public interface ISearchEngine
     {
-        public Task<List<FileModel>> FindFile(string searchPath, string fileName, IProgress<ProgressReportModel> progress);
+        public List<FileModel> FindFiles(string searchPath, string fileName, IProgress<ProgressReportModel> progress, CancellationToken cancellationToken);
+        public Task FindFilesAsync(string searchPath, string fileName, IProgress<ProgressReportModel> progress, CancellationToken cancellationToken);
     }
 }
