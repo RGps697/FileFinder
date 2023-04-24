@@ -17,46 +17,25 @@ namespace MvxStarter.Core.Services.Implementations
         {
         }
 
-        public List<FileModel> FindFiles(string searchPath, string fileName, IProgress<ProgressReportModel> progress, CancellationToken cancellationToken)
+        public List<FileModel>? FindFiles(string searchPath, string fileName, IProgress<ProgressReportModel> progress, CancellationToken cancellationToken)
         {
-            List<FileModel> foundFiles = new List<FileModel>();
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
-            try
-            {
-                GetAllSubdirectories(searchPath, cancellationToken);
-            }
-            catch (OperationCanceledException)
-            {
-                Debug.WriteLine("Canceled 2");
-            }
-
-            try
-            {
-                for (int i = 0; i < directoriesToSearch.Count; i++)
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    foundFiles.AddRange(SearchDirectory(directoriesToSearch[i], fileName, progress));
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                Debug.WriteLine("Canceled 3");
-            }
-
-            stopwatch.Stop();
-            Debug.WriteLine($"Total directory amount: {directoriesToSearch.Count}");
-            Debug.WriteLine($"Time elapsed: {stopwatch.Elapsed.Seconds}", ConsoleColor.Green);
-            directoriesToSearch.Clear();
             directoriesSearched = 0;
-            return foundFiles;
+            GetAllSubdirectories(searchPath, cancellationToken);
+            try
+            {
+                List<FileModel> files = SearchDirectory(searchPath, fileName, progress);
+                Debug.WriteLine($"Directories searched: {directoriesSearched}");
+                return files;
+            }
+            catch (OperationCanceledException)
+            {
+                Debug.WriteLine("Canceled");
+                return null;
+            }
         }
 
         public async Task FindFilesAsync(string searchPath, string fileName, IProgress<ProgressReportModel> progress, CancellationToken cancellationToken)
         {
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
-
             await GetAllSubdirectoriesAsync(searchPath);
 
             //ParallelOptions parallelOptionsDirectory = new ParallelOptions { MaxDegreeOfParallelism = 1, CancellationToken = cancellationToken };
@@ -88,34 +67,37 @@ namespace MvxStarter.Core.Services.Implementations
 
             //SearchDirectory(searchPath, fileName, progress, cancellationToken);
 
-
-
             //tasks.Add(SearchDirectory(searchPath, fileName, progress));
             // Task.Run(() => SearchDirectory(searchPath, fileName, progress));
-
-            stopwatch.Stop();
             Debug.WriteLine($"Total directory amount: {directoriesToSearch.Count}");
-            Debug.WriteLine($"Time elapsed: {stopwatch.Elapsed.Seconds}", ConsoleColor.Green);
             directoriesToSearch.Clear();
             directoriesSearched = 0;
         }
 
+        //PRIVATE METHODS
+
         private void GetAllSubdirectories(string directoryPath, CancellationToken cancellationToken)
         {
-            Debug.WriteLine($"Current directory: {directoryPath}");
-            List<string> subdirectories = new List<string>();
-
-            cancellationToken.ThrowIfCancellationRequested();
-
-            subdirectories.AddRange(Directory.GetDirectories(directoryPath));
-            for (int i = 0; i < subdirectories.Count; i++)
+            try
             {
-                int currentIndex = i;
-                Debug.WriteLine($"Getting directory: {subdirectories[currentIndex]}");
-                GetAllSubdirectories(subdirectories[i], cancellationToken);
-            }
+                Debug.WriteLine($"Current directory: {directoryPath}");
+                List<string> subdirectories = new List<string>();
 
-            directoriesToSearch.AddRange(subdirectories);
+                cancellationToken.ThrowIfCancellationRequested();
+
+                subdirectories.AddRange(Directory.GetDirectories(directoryPath));
+                for (int i = 0; i < subdirectories.Count; i++)
+                {
+                    int currentIndex = i;
+                    GetAllSubdirectories(subdirectories[i], cancellationToken);
+                }
+
+                directoriesToSearch.AddRange(subdirectories);
+            }
+            catch (UnauthorizedAccessException)
+            {
+
+            }
         }
 
         private async Task GetAllSubdirectoriesAsync(string directoryPath)
@@ -134,27 +116,38 @@ namespace MvxStarter.Core.Services.Implementations
             directoriesToSearch.AddRange(subdirectories);
         }
 
-        private FileModel[] SearchDirectory(string directoryPath, string fileName, IProgress<ProgressReportModel> progress)
+        private List<FileModel> SearchDirectory(string directoryPath, string fileName, IProgress<ProgressReportModel> progress)
         {
-            Debug.WriteLine($"Thread: {Environment.CurrentManagedThreadId}");
-            Debug.WriteLine($"Path: {directoryPath} !");
-            string[] foundFilesInDirectory = Directory.GetFiles($"{directoryPath}", $"{fileName}");
-            FileModel[]? foundFiles = new FileModel[foundFilesInDirectory.Length];
-            directoriesSearched++;
-            ProgressReportModel report = new ProgressReportModel();
-            if (foundFilesInDirectory.Length > 0)
+            try
             {
-                for (int i = 0; i < foundFilesInDirectory.Length; i++)
+                string[] foundFilesInDirectory = Directory.GetFiles($"{directoryPath}", $"{fileName}");
+                List<FileModel>? foundFiles = new List<FileModel>();
+                directoriesSearched++;
+                Debug.WriteLine($"Length: {foundFilesInDirectory.Length}");
+
+                if (foundFilesInDirectory.Length > 0)
                 {
-                    Debug.WriteLine($"Found file in directory {directoryPath}: {foundFilesInDirectory[i]}");
-                    foundFiles[i] = new FileModel(foundFilesInDirectory[i]);
+                    ProgressReportModel report = new ProgressReportModel();
+                    for (int i = 0; i < foundFilesInDirectory.Length; i++)
+                    {
+                        Debug.WriteLine($"i: {i}");
+                        foundFiles.Add(new FileModel(foundFilesInDirectory[i]));
+                    }
+                    report.PercentageComplete = directoriesSearched * 100 / directoriesToSearch.Count;
+                    report.FoundFiles.AddRange(foundFiles);
+                    progress.Report(report);
                 }
-                
+                string[] directories = Directory.GetDirectories(directoryPath);
+                for (int i = 0; i < directories.Length; i++)
+                {
+                    foundFiles.AddRange(SearchDirectory(directories[i], fileName, progress));
+                }
+                return foundFiles;
             }
-            report.PercentageComplete = directoriesSearched * 100 / directoriesToSearch.Count;
-            report.FoundFiles.AddRange(foundFiles);
-            progress.Report(report);
-            return foundFiles;
+            catch (UnauthorizedAccessException)
+            {
+                return new List<FileModel>();
+            }
         }
 
         private async Task SearchDirectoryAsync(string directoryPath, string fileName, IProgress<ProgressReportModel> progress, CancellationToken cancellationToken)

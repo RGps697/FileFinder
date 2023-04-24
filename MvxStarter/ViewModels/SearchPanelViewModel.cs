@@ -124,15 +124,19 @@ namespace MvxStarter.Core.ViewModels
             progress.ProgressChanged += ReportProgress;
             cts = new CancellationTokenSource();
             Debug.WriteLine($"Search in: {TargetDirectory}, file name: {SearchValue}");
-            List<FileModel> result;
+            List<FileModel>? result;
+
+            var stopwatch = new Stopwatch();
             if (ButtonMainThreadIsChecked)
             {
+                stopwatch.Start();
                 result = SearchEngine.FindFiles(TargetDirectory, SearchValue, progress, cts.Token);
             }
             else if (ButtonSeparateThreadIsChecked)
             {
                 try
                 {
+                    stopwatch.Start();
                     result = await Task.Run(() => SearchEngine.FindFiles(TargetDirectory, SearchValue, progress, cts.Token));
                 }
                 catch (OperationCanceledException)
@@ -140,9 +144,13 @@ namespace MvxStarter.Core.ViewModels
                     Debug.WriteLine("Canceled");
                 }
             }
+
+            stopwatch.Stop();
+            Debug.WriteLine($"Time elapsed: {stopwatch.Elapsed.Milliseconds/1000.0} seconds");
             CanSearch = true;
             CanStop = false;
-            Debug.WriteLine(ProgressValue);
+            ProgressValue = 100;
+            Debug.WriteLine($"Pvalue: {ProgressValue}");
         }
 
         public void StopSearch()
@@ -157,11 +165,17 @@ namespace MvxStarter.Core.ViewModels
             Debug.WriteLine($"Reported");
             for (int i = 0; i < e.FoundFiles.Count; i++)
             {
-                FoundFiles.Add(e.FoundFiles[i]);
-                Debug.WriteLine(i + ": " + e.FoundFiles[i]);
+                WriteFoundFiles(e.FoundFiles[i], e.PercentageComplete);
             }
-            ProgressValue = e.PercentageComplete;
-            
+        }
+
+        private void WriteFoundFiles(FileModel item, int progress)
+        {
+            FoundFiles.Add(item);
+            if (progress > ProgressValue)
+            {
+                ProgressValue = progress;
+            }
         }
     }
 }
