@@ -10,28 +10,6 @@
              mc:Ignorable="d" 
              d:DesignHeight="650" d:DesignWidth="800">
     <views:MvxWpfView.Resources>
-        <Style x:Key="autoCompleteTextBox" TargetType="{x:Type TextBox}">
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="{x:Type TextBoxBase}">
-                        <Grid x:Name="root">
-                            <ScrollViewer Margin="0" x:Name="PART_ContentHost"/>
-                            <Popup x:Name="PART_Popup" AllowsTransparency="true"  
-                         Placement="Bottom" IsOpen="False"  
-                            PopupAnimation="{DynamicResource  
-                            {x:Static SystemParameters.ComboBoxPopupAnimationKey}}">
-                                <ListBox x:Name="PART_ItemList" SnapsToDevicePixels  
-                                  ="{TemplateBinding  
-                                  SnapsToDevicePixels}"  
-                              VerticalContentAlignment="Stretch" HorizontalContentAlignment  
-                           ="Stretch"  
-                        KeyboardNavigation.DirectionalNavigation="Contained" />
-                            </Popup>
-                        </Grid>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
     </views:MvxWpfView.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
@@ -49,34 +27,38 @@
             <RowDefinition Height="auto"></RowDefinition>
             <RowDefinition Height="auto"></RowDefinition>
             <RowDefinition Height="auto"></RowDefinition>
+            <RowDefinition Height="auto"></RowDefinition>
             <RowDefinition Height="*"></RowDefinition>
             <RowDefinition Height="20"></RowDefinition>
         </Grid.RowDefinitions>
         <!-- Row 1 -->
         <TextBlock Text="Location:" Grid.Column="1" Grid.Row="1" TextAlignment="Left" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0 0 10 0"></TextBlock>
-        <TextBox Text="{Binding TargetDirectory, Mode=TwoWay}" Grid.Column="2" Grid.Row="1"  MinWidth="100" Margin="0 10 10 10" FontSize="20"></TextBox>
+        <TextBox Text="{Binding TargetDirectory, Mode=TwoWay}" Grid.Column="2" Grid.Row="1" Grid.ColumnSpan="3" MinWidth="100" Margin="0 10 10 10" FontSize="20"></TextBox>
         <!-- Row 2 -->
         <TextBlock Text="File:" Grid.Column="1" Grid.Row="2" TextAlignment="Left" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0 0 10 0"></TextBlock>
-        <TextBox Text="{Binding SearchValue, Mode=OneWayToSource}" Grid.Column="2" Grid.Row="2"  MinWidth="100" Margin="0 10 10 10" FontSize="20"></TextBox>
-        <!--<Button mvx:Bi.nd="Command FindFilesCommand" IsEnabled="{Binding CanSearch}" Grid.Column="3" Grid.Row="2" Grid.ColumnSpan="2" Margin="0 5 0 5" Width="100" Content="Find"></Button>-->
+        <TextBox Text="{Binding SearchValue, Mode=OneWayToSource}" Grid.Column="2" Grid.Row="2" Grid.ColumnSpan="3" MinWidth="100" Margin="0 10 10 10" FontSize="20"></TextBox>
         <!-- Row 3 -->
         <Border Grid.Column="1" Grid.Row="3" Grid.ColumnSpan="4" Height="30" BorderBrush="Gray" BorderThickness="2" Margin="0 3 0 3">
             <StackPanel Orientation="Horizontal">
                 <RadioButton Content="Main thread" IsChecked="{Binding ButtonMainThreadIsChecked, Mode=TwoWay}" VerticalContentAlignment="Center" Margin="6 0 0 0"></RadioButton>
                 <RadioButton Content="Separate thread" IsChecked="{Binding ButtonSeparateThreadIsChecked, Mode=TwoWay}" VerticalContentAlignment="Center" Margin="6 0 0 0"></RadioButton>
+                <RadioButton Content="Parallel" IsChecked="{Binding ButtonParallelIsChecked, Mode=TwoWay}" VerticalContentAlignment="Center" Margin="6 0 0 0"></RadioButton>
             </StackPanel>
         </Border>
         <!-- Row 4 -->
-        <Border Grid.Column="1" Grid.Row="4" Grid.ColumnSpan="4" Height="50" BorderBrush="Gray" BorderThickness="2" Margin="0 3 0 3">
+        <Slider Name="OperationSlider" Value="{Binding ConcurrentOperationCount, Mode=TwoWay}" Minimum="1" Grid.Column="1" Grid.Row="4" Grid.ColumnSpan="3" Margin="0 10" IsEnabled="{Binding ButtonParallelIsChecked, Mode=TwoWay}"></Slider>
+        <TextBlock Text="{Binding ElementName=OperationSlider, Path=Value}" Grid.Column="4" Grid.Row="4" Width="30" VerticalAlignment="Center"></TextBlock>
+        <!-- Row 5 -->
+        <Border Grid.Column="1" Grid.Row="5" Grid.ColumnSpan="4" Height="50" BorderBrush="Gray" BorderThickness="2" Margin="0 3 0 3">
             <StackPanel Orientation="Horizontal">
                 <Button mvx:Bi.nd="Command FindFilesCommand" IsEnabled="{Binding CanSearch, Mode=OneWay}" Margin="3" Width="100" Content="Find"></Button>
                 <Button mvx:Bi.nd="Command StopSearchCommand" IsEnabled="{Binding CanStop, Mode=OneWay}" Margin="3" Width="100" Content="Stop"></Button>
             </StackPanel>
         </Border>
-        <!-- Row 5 -->
-        <ProgressBar Value="{Binding ProgressValue, Mode=OneWay}" Grid.Column="1" Grid.Row="5" Grid.ColumnSpan="4" Height="20"></ProgressBar>
         <!-- Row 6 -->
-        <ListView ItemsSource="{Binding FoundFiles, Mode=TwoWay}" Grid.Column="1" Grid.Row="6" Grid.ColumnSpan="4">
+        <ProgressBar Value="{Binding ProgressValue, Mode=OneWay}" Grid.Column="1" Grid.Row="6" Grid.ColumnSpan="4" Height="20"></ProgressBar>
+        <!-- Row 7 -->
+        <ListView ItemsSource="{Binding FoundFiles, Mode=TwoWay}" Grid.Column="1" Grid.Row="7" Grid.ColumnSpan="4">
             <ListView.View>
                 <GridView>
                     <GridViewColumn DisplayMemberBinding="{Binding Name}" Header="Name" Width="300" />

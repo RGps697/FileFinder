@@ -34,16 +34,9 @@ namespace MvxStarter.Core.Services.Implementations
             }
         }
 
-        public async Task FindFilesAsync(string searchPath, string fileName, IProgress<ProgressReportModel> progress, CancellationToken cancellationToken)
+        public async Task FindFilesParallel(string searchPath, string fileName, int concurrentOperationAmount, IProgress<ProgressReportModel> progress, CancellationToken cancellationToken)
         {
-            await GetAllSubdirectoriesAsync(searchPath);
-
-            //ParallelOptions parallelOptionsDirectory = new ParallelOptions { MaxDegreeOfParallelism = 1, CancellationToken = cancellationToken };
-            //Parallel.ForEach(directoriesToSearch, parallelOptionsDirectory, async (directory) =>
-            //{
-            //    Debug.WriteLine($"Looking for files in: {directory}");
-            //    await SearchDirectory(directory, fileName, progress, cancellationToken);
-            //});
+            GetAllSubdirectories(searchPath, cancellationToken);
 
             foreach (var d in directoriesToSearch)
             {
@@ -53,11 +46,12 @@ namespace MvxStarter.Core.Services.Implementations
 
             try
             {
-                ParallelOptions parallelOptionsFile = new ParallelOptions { MaxDegreeOfParallelism = 1, CancellationToken = cancellationToken};
+                Debug.WriteLine($"OPERATIONS: {concurrentOperationAmount}");
+                ParallelOptions parallelOptionsFile = new ParallelOptions { MaxDegreeOfParallelism = concurrentOperationAmount, CancellationToken = cancellationToken};
                 Parallel.ForEach(directoriesToSearch, parallelOptionsFile, async (directory) =>
                 {
                     Debug.WriteLine($"Looking for files in: {directory}");
-                    await SearchDirectoryAsync(directory, fileName, progress, cancellationToken);
+                    SearchDirectoryAsync(directory, fileName, progress);
                 });
             }
             catch (OperationCanceledException)
@@ -100,17 +94,19 @@ namespace MvxStarter.Core.Services.Implementations
             }
         }
 
-        private async Task GetAllSubdirectoriesAsync(string directoryPath)
+        private async Task GetAllSubdirectoriesAsync(string directoryPath, CancellationToken cancellationToken)
         {
             Debug.WriteLine($"Current directory: {directoryPath}");
             List<string> subdirectories = new List<string>();
+
+            cancellationToken.ThrowIfCancellationRequested();
 
             subdirectories.AddRange(Directory.GetDirectories(directoryPath));
             for (int i = 0; i < subdirectories.Count; i++)
             {
                 int currentIndex = i;
                 Debug.WriteLine($"Getting directory: {subdirectories[currentIndex]}");
-                Task.FromResult(GetAllSubdirectoriesAsync(subdirectories[i]));
+                GetAllSubdirectoriesAsync(subdirectories[i], cancellationToken);
             }
 
             directoriesToSearch.AddRange(subdirectories);
@@ -150,7 +146,7 @@ namespace MvxStarter.Core.Services.Implementations
             }
         }
 
-        private async Task SearchDirectoryAsync(string directoryPath, string fileName, IProgress<ProgressReportModel> progress, CancellationToken cancellationToken)
+        private async Task SearchDirectoryAsync(string directoryPath, string fileName, IProgress<ProgressReportModel> progress)
         {
             Debug.WriteLine($"Thread: {Environment.CurrentManagedThreadId}");
             Debug.WriteLine($"Path: {directoryPath} !");
@@ -159,7 +155,7 @@ namespace MvxStarter.Core.Services.Implementations
             if (foundFilesInDirectory.Length > 0)
             {
                 ProgressReportModel report = new ProgressReportModel();
-                for(int i = 0; i < foundFilesInDirectory.Length; i++)
+                for (int i = 0; i < foundFilesInDirectory.Length; i++)
                 {
                     Debug.WriteLine($"Found file in directory {directoryPath}: {foundFilesInDirectory[i]}");
                     foundFiles[i] = new FileModel(foundFilesInDirectory[i]);
@@ -167,8 +163,6 @@ namespace MvxStarter.Core.Services.Implementations
                 report.FoundFiles.AddRange(foundFiles);
                 progress.Report(report);
             }
-
-            cancellationToken.ThrowIfCancellationRequested();
         }
     }
 }

@@ -19,6 +19,8 @@ namespace MvxStarter.Core.ViewModels
         private bool _canStop = false;
         private bool _buttonMainThreadIsChecked = true;
         private bool _buttonSeparateThreadIsChecked;
+        private bool _buttonParallelIsChecked;
+        private int _concurrentOperationCount = 1;
 
         private ObservableCollection<FileModel> _foundFiles = new ObservableCollection<FileModel>();
         private ISearchEngine _searchEngine = new SearchEngine();
@@ -79,7 +81,26 @@ namespace MvxStarter.Core.ViewModels
             get { return _buttonSeparateThreadIsChecked; }
             set { _buttonSeparateThreadIsChecked = value; }
         }
-
+        public bool ButtonParallelIsChecked
+        {
+            get { return _buttonParallelIsChecked; }
+            set 
+            {
+                _buttonParallelIsChecked = value;
+                RaisePropertyChanged(() => ButtonParallelIsChecked);
+            }
+        }
+        public int ConcurrentOperationCount
+        {
+            get { return _concurrentOperationCount; }
+            set 
+            {
+                if (value >= -1 && value != 0)
+                {
+                    _concurrentOperationCount = value;
+                }
+            }
+        }
 
         public ObservableCollection<FileModel> FoundFiles
         {
@@ -127,17 +148,27 @@ namespace MvxStarter.Core.ViewModels
             List<FileModel>? result;
 
             var stopwatch = new Stopwatch();
+            stopwatch.Start();
             if (ButtonMainThreadIsChecked)
             {
-                stopwatch.Start();
                 result = SearchEngine.FindFiles(TargetDirectory, SearchValue, progress, cts.Token);
             }
             else if (ButtonSeparateThreadIsChecked)
             {
                 try
                 {
-                    stopwatch.Start();
                     result = await Task.Run(() => SearchEngine.FindFiles(TargetDirectory, SearchValue, progress, cts.Token));
+                }
+                catch (OperationCanceledException)
+                {
+                    Debug.WriteLine("Canceled");
+                }
+            }
+            else if (ButtonParallelIsChecked)
+            {
+                try
+                {
+                    await Task.Run(() => SearchEngine.FindFilesParallel(TargetDirectory, SearchValue, ConcurrentOperationCount, progress, cts.Token));
                 }
                 catch (OperationCanceledException)
                 {
@@ -150,7 +181,6 @@ namespace MvxStarter.Core.ViewModels
             CanSearch = true;
             CanStop = false;
             ProgressValue = 100;
-            Debug.WriteLine($"Pvalue: {ProgressValue}");
         }
 
         public void StopSearch()
