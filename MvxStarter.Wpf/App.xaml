@@ -5,4 +5,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:MvxStarter.Wpf"
              StartupUri="MainWindow.xaml">
+    <Application.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </Application.Resources>
 </views:MvxApplication>

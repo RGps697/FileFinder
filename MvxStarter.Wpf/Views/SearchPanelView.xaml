@@ -8,7 +8,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:MvxStarter.Wpf.Views"
              mc:Ignorable="d" 
-             d:DesignHeight="650" d:DesignWidth="800">
+             d:DesignHeight="650" d:DesignWidth="1200">
     <views:MvxWpfView.Resources>
     </views:MvxWpfView.Resources>
     <Grid>
@@ -16,6 +16,7 @@
             <ColumnDefinition Width="20"></ColumnDefinition>
             <ColumnDefinition Width="auto"></ColumnDefinition>
             <ColumnDefinition Width="*"></ColumnDefinition>
+            <ColumnDefinition Width="auto"></ColumnDefinition>
             <ColumnDefinition Width="auto"></ColumnDefinition>
             <ColumnDefinition Width="auto"></ColumnDefinition>
             <ColumnDefinition Width="20"></ColumnDefinition>
@@ -33,10 +34,15 @@
         </Grid.RowDefinitions>
         <!-- Row 1 -->
         <TextBlock Text="Location:" Grid.Column="1" Grid.Row="1" TextAlignment="Left" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0 0 10 0"></TextBlock>
-        <TextBox Text="{Binding TargetDirectory, Mode=TwoWay}" Grid.Column="2" Grid.Row="1" Grid.ColumnSpan="3" MinWidth="100" Margin="0 10 10 10" FontSize="20"></TextBox>
+        <TextBox Text="{Binding TargetDirectory, Mode=TwoWay}" Grid.Column="2" Grid.Row="1" Grid.ColumnSpan="3" MinWidth="100" Margin="0 10 0 10" FontSize="20"></TextBox>
+        <Border Grid.Column="5" Grid.Row="1" Grid.RowSpan="7" Margin="10 0 0 0" Width="400" BorderBrush="Gray" BorderThickness="2">
+            <ScrollViewer>
+                <TextBlock Text="{Binding ConsoleOutput, Mode=OneWay}" TextWrapping="Wrap" ></TextBlock>
+            </ScrollViewer>
+        </Border>
         <!-- Row 2 -->
         <TextBlock Text="File:" Grid.Column="1" Grid.Row="2" TextAlignment="Left" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0 0 10 0"></TextBlock>
-        <TextBox Text="{Binding SearchValue, Mode=OneWayToSource}" Grid.Column="2" Grid.Row="2" Grid.ColumnSpan="3" MinWidth="100" Margin="0 10 10 10" FontSize="20"></TextBox>
+        <TextBox Text="{Binding SearchValue, Mode=OneWayToSource}" Grid.Column="2" Grid.Row="2" Grid.ColumnSpan="3" MinWidth="100" Margin="0 10 0 10" FontSize="20"></TextBox>
         <!-- Row 3 -->
         <Border Grid.Column="1" Grid.Row="3" Grid.ColumnSpan="4" Height="30" BorderBrush="Gray" BorderThickness="2" Margin="0 3 0 3">
             <StackPanel Orientation="Horizontal">
@@ -46,8 +52,8 @@
             </StackPanel>
         </Border>
         <!-- Row 4 -->
-        <Slider Name="OperationSlider" Value="{Binding ConcurrentOperationCount, Mode=TwoWay}" Minimum="1" Grid.Column="1" Grid.Row="4" Grid.ColumnSpan="3" Margin="0 10" IsEnabled="{Binding ButtonParallelIsChecked, Mode=TwoWay}"></Slider>
-        <TextBlock Text="{Binding ElementName=OperationSlider, Path=Value}" Grid.Column="4" Grid.Row="4" Width="30" VerticalAlignment="Center"></TextBlock>
+        <TextBlock Text="{Binding ElementName=OperationSlider, Path=Value}" Grid.Column="1" Grid.Row="4" Width="30" VerticalAlignment="Center" Visibility="{Binding ButtonParallelIsChecked, Converter={StaticResource BoolToVis}}"></TextBlock>
+        <Slider Name="OperationSlider" Value="{Binding ConcurrentOperationCount, Mode=TwoWay}" Minimum="1" Grid.Column="2" Grid.Row="4" Grid.ColumnSpan="2" Margin="0 10" IsEnabled="{Binding ButtonParallelIsChecked, Mode=TwoWay}"></Slider>
         <!-- Row 5 -->
         <Border Grid.Column="1" Grid.Row="5" Grid.ColumnSpan="4" Height="50" BorderBrush="Gray" BorderThickness="2" Margin="0 3 0 3">
             <StackPanel Orientation="Horizontal">
