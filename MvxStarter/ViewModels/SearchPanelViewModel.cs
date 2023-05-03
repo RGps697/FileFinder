@@ -182,7 +182,7 @@ namespace MvxStarter.Core.ViewModels
             {
                 try
                 {
-                     await Task.Run(() => SearchEngine.FindFilesParallel(TargetDirectory, SearchValue, ConcurrentOperationCount, progress, cts.Token));
+                     await SearchEngine.FindFilesParallel(TargetDirectory, SearchValue, ConcurrentOperationCount, progress, cts.Token);
                 }
                 catch (OperationCanceledException)
                 {
@@ -219,17 +219,18 @@ namespace MvxStarter.Core.ViewModels
         {
             for (int i = 0; i < e.FoundFiles.Count; i++)
             {
-                WriteFoundFiles(e.FoundFiles[i], e.PercentageComplete);
+                WriteFoundFiles(e.FoundFiles[i]);
+
+                if (e.PercentageComplete > ProgressValue)
+                {
+                    ProgressValue = e.PercentageComplete;
+                }
             }
         }
 
-        private void WriteFoundFiles(FileModel item, int progress)
+        private void WriteFoundFiles(FileModel item)
         {
             FoundFiles.Add(item);
-            if (progress > ProgressValue)
-            {
-                ProgressValue = progress;
-            }
         }
     }
 }

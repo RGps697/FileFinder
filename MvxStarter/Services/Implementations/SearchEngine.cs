@@ -41,26 +41,29 @@ namespace MvxStarter.Core.Services.Implementations
             }
         }
 
-        public void FindFilesParallel(string searchPath, string fileName, int concurrentOperationAmount, IProgress<ProgressReportModel> progress, CancellationToken cancellationToken)
+        public async Task FindFilesParallel(string searchPath, string fileName, int concurrentOperationAmount, IProgress<ProgressReportModel> progress, CancellationToken cancellationToken)
         {
             ConsoleOutput("Searching for files in parallel...");
-            GetAllSubdirectories(searchPath, cancellationToken);
+            await Task.Run(() =>
+            {
+                GetAllSubdirectories(searchPath, cancellationToken);
 
-            try
-            {
-                ParallelOptions parallelOptionsFile = new ParallelOptions { MaxDegreeOfParallelism = concurrentOperationAmount, CancellationToken = cancellationToken };
-                Parallel.ForEach(directoriesToSearch, parallelOptionsFile, (directory) =>
+                try
                 {
-                    SearchDirectory(directory, fileName, progress);
-                });
-            }
-            catch (OperationCanceledException)
-            {
-                ConsoleOutput("Canceled");
-            }
-            ConsoleOutput($"Directories searched: {directoriesToSearch.Count}");
-            directoriesToSearch.Clear();
-            directoriesSearched = 0;
+                    ParallelOptions parallelOptionsFile = new ParallelOptions { MaxDegreeOfParallelism = concurrentOperationAmount, CancellationToken = cancellationToken };
+                    Parallel.ForEach(directoriesToSearch, parallelOptionsFile, (directory) =>
+                    {
+                        SearchDirectory(directory, fileName, progress);
+                    });
+                }
+                catch (OperationCanceledException)
+                {
+                    ConsoleOutput("Canceled");
+                }
+                ConsoleOutput($"Directories searched: {directoriesToSearch.Count}");
+                directoriesToSearch.Clear();
+                directoriesSearched = 0;
+            });
         }
 
         //PRIVATE METHODS
@@ -144,6 +147,7 @@ namespace MvxStarter.Core.Services.Implementations
         {
             try { 
                 string[] foundFilesInDirectory = Directory.GetFiles($"{directoryPath}", $"{fileName}");
+                directoriesSearched++;
                 FileModel[]? foundFiles = new FileModel[foundFilesInDirectory.Length];
                 if (foundFilesInDirectory.Length > 0)
                 {
@@ -152,6 +156,7 @@ namespace MvxStarter.Core.Services.Implementations
                     {
                         foundFiles[i] = new FileModel(foundFilesInDirectory[i]);
                     }
+                    report.PercentageComplete = directoriesSearched * 100 / directoriesToSearch.Count;
                     report.FoundFiles.AddRange(foundFiles);
                     progress.Report(report);
                 }
