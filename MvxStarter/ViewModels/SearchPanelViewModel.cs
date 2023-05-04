@@ -151,51 +151,58 @@ namespace MvxStarter.Core.ViewModels
 
         public async Task FindFiles()
         {
-            ProgressValue = 0;
-            CanSearch = false;
-            CanStop = true;
-            FoundFiles.Clear();
-            Progress<ProgressReportModel> progress = new Progress<ProgressReportModel>();
-            progress.ProgressChanged += ReportProgress;
-            cts = new CancellationTokenSource();
-            WriteInConsole($"Search in directory: {TargetDirectory}. File name: {SearchValue}.");
-            List<FileModel>? result;
+            if (Directory.Exists(TargetDirectory))
+            {
+                ProgressValue = 0;
+                CanSearch = false;
+                CanStop = true;
+                FoundFiles.Clear();
+                Progress<ProgressReportModel> progress = new Progress<ProgressReportModel>();
+                progress.ProgressChanged += ReportProgress;
+                cts = new CancellationTokenSource();
+                WriteInConsole($"Search in directory: {TargetDirectory}. File name: {SearchValue}.");
+                List<FileModel>? result;
 
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
-            if (ButtonMainThreadIsChecked)
-            {
-                result = SearchEngine.FindFiles(TargetDirectory, SearchValue, progress, cts.Token);
-            }
-            else if (ButtonSeparateThreadIsChecked)
-            {
-                try
+                var stopwatch = new Stopwatch();
+                stopwatch.Start();
+                if (ButtonMainThreadIsChecked)
                 {
-                    result = await Task.Run(() => SearchEngine.FindFiles(TargetDirectory, SearchValue, progress, cts.Token));
+                    result = SearchEngine.FindFiles(TargetDirectory, SearchValue, progress, cts.Token);
                 }
-                catch (OperationCanceledException)
+                else if (ButtonSeparateThreadIsChecked)
                 {
-                    WriteInConsole("Canceled");
+                    try
+                    {
+                        result = await Task.Run(() => SearchEngine.FindFiles(TargetDirectory, SearchValue, progress, cts.Token));
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        WriteInConsole("Canceled");
+                    }
                 }
-            }
-            else if (ButtonParallelIsChecked)
-            {
-                try
+                else if (ButtonParallelIsChecked)
                 {
-                     await SearchEngine.FindFilesParallel(TargetDirectory, SearchValue, ConcurrentOperationCount, progress, cts.Token);
+                    try
+                    {
+                        await SearchEngine.FindFilesParallel(TargetDirectory, SearchValue, ConcurrentOperationCount, progress, cts.Token);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        WriteInConsole("Canceled");
+                    }
                 }
-                catch (OperationCanceledException)
-                {
-                    WriteInConsole("Canceled");
-                }
-            }
 
-            stopwatch.Stop();
-            WriteInConsole($"Time elapsed: {stopwatch.ElapsedMilliseconds/1000.0} seconds");
-            WriteConsoleSeparator();
-            CanSearch = true;
-            CanStop = false;
-            ProgressValue = 100;
+                stopwatch.Stop();
+                WriteInConsole($"Time elapsed: {stopwatch.ElapsedMilliseconds / 1000.0} seconds");
+                WriteConsoleSeparator();
+                CanSearch = true;
+                CanStop = false;
+                ProgressValue = 100;
+            }
+            else
+            {
+                WriteInConsole("Selected directory does not exist");
+            }
         }
 
         public void StopSearch()

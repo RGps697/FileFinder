@@ -8,9 +8,12 @@ namespace MvxStarter.Core.Models
 {
     public class FileModel
     {
-        public FileModel(string name)
+        public FileModel(string path)
         {
-            Name = name;
+            FileInfo fileInfo = new FileInfo(path);
+            Name = Path.GetFileNameWithoutExtension(fileInfo.Name);
+            Type = fileInfo.Extension;
+            LastModified = fileInfo.LastWriteTime.ToString();
         }
 
         public string Name { get; set; }

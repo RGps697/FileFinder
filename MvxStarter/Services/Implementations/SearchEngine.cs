@@ -70,6 +70,7 @@ namespace MvxStarter.Core.Services.Implementations
 
         private void GetAllSubdirectories(string directoryPath, CancellationToken cancellationToken)
         {
+            //Debug.WriteLine(directoryPath);
             try
             {
                 List<string> subdirectories = new List<string>();

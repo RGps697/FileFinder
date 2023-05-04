@@ -16,6 +16,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Windows.Forms;
 
 namespace MvxStarter.Wpf.Views
 {
@@ -29,6 +30,17 @@ namespace MvxStarter.Wpf.Views
         public MainWindowView()
         {
             InitializeComponent();
+        }
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            FolderBrowserDialog folderBrowserDialog= new FolderBrowserDialog();
+            if(folderBrowserDialog.ShowDialog() == DialogResult.OK)
+            {
+                DirectoryPath.Text = folderBrowserDialog.SelectedPath;
+                DirectoryPath.GetBindingExpression(System.Windows.Controls.TextBox.TextProperty)
+                   .UpdateSource();
+            }
         }
     }
 }
