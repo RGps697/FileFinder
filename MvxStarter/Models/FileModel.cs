@@ -11,7 +11,7 @@ namespace MvxStarter.Core.Models
         public FileModel(string path)
         {
             FileInfo fileInfo = new FileInfo(path);
-            Name = Path.GetFileNameWithoutExtension(fileInfo.Name);
+            Name = path;
             Type = fileInfo.Extension;
             LastModified = fileInfo.LastWriteTime.ToString();
         }

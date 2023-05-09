@@ -70,7 +70,6 @@ namespace MvxStarter.Core.Services.Implementations
 
         private void GetAllSubdirectories(string directoryPath, CancellationToken cancellationToken)
         {
-            //Debug.WriteLine(directoryPath);
             try
             {
                 List<string> subdirectories = new List<string>();
@@ -142,6 +141,10 @@ namespace MvxStarter.Core.Services.Implementations
             {
                 return new List<FileModel>();
             }
+            catch (DirectoryNotFoundException)
+            {
+                return new List<FileModel>();
+            }
         }
 
         private void SearchDirectory(string directoryPath, string fileName, IProgress<ProgressReportModel> progress)
@@ -152,17 +155,22 @@ namespace MvxStarter.Core.Services.Implementations
                 FileModel[]? foundFiles = new FileModel[foundFilesInDirectory.Length];
                 if (foundFilesInDirectory.Length > 0)
                 {
-                    ProgressReportModel report = new ProgressReportModel();
                     for (int i = 0; i < foundFilesInDirectory.Length; i++)
                     {
                         foundFiles[i] = new FileModel(foundFilesInDirectory[i]);
                     }
-                    report.PercentageComplete = directoriesSearched * 100 / directoriesToSearch.Count;
-                    report.FoundFiles.AddRange(foundFiles);
-                    progress.Report(report);
+
                 }
+                ProgressReportModel report = new ProgressReportModel();
+                report.PercentageComplete = directoriesSearched * 100 / directoriesToSearch.Count;
+                report.FoundFiles.AddRange(foundFiles);
+                progress.Report(report);
             }
             catch (UnauthorizedAccessException)
+            {
+
+            }
+            catch (DirectoryNotFoundException)
             {
 
             }

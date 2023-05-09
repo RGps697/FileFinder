@@ -1,6 +1,7 @@
 ﻿
 using MvvmCross.Commands;
 using MvxStarter.Core.Models;
+using MvxStarter.Core.util;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -151,7 +152,12 @@ namespace MvxStarter.Core.ViewModels
 
         public async Task FindFiles()
         {
-            if (Directory.Exists(TargetDirectory))
+            if (!Directory.Exists(TargetDirectory))
+            {
+                WriteInConsole("Selected directory does not exist");
+                return;
+            }
+            else
             {
                 ProgressValue = 0;
                 CanSearch = false;
@@ -159,49 +165,37 @@ namespace MvxStarter.Core.ViewModels
                 FoundFiles.Clear();
                 Progress<ProgressReportModel> progress = new Progress<ProgressReportModel>();
                 progress.ProgressChanged += ReportProgress;
+                ProgressThrottler progressThrottler = new ProgressThrottler(progress);
                 cts = new CancellationTokenSource();
                 WriteInConsole($"Search in directory: {TargetDirectory}. File name: {SearchValue}.");
                 List<FileModel>? result;
 
                 var stopwatch = new Stopwatch();
                 stopwatch.Start();
-                if (ButtonMainThreadIsChecked)
+
+                try
                 {
-                    result = SearchEngine.FindFiles(TargetDirectory, SearchValue, progress, cts.Token);
-                }
-                else if (ButtonSeparateThreadIsChecked)
-                {
-                    try
-                    {
+                    if (ButtonMainThreadIsChecked)
+                        result = SearchEngine.FindFiles(TargetDirectory, SearchValue, progress, cts.Token);
+
+                    else if (ButtonSeparateThreadIsChecked)
                         result = await Task.Run(() => SearchEngine.FindFiles(TargetDirectory, SearchValue, progress, cts.Token));
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        WriteInConsole("Canceled");
-                    }
-                }
-                else if (ButtonParallelIsChecked)
-                {
-                    try
-                    {
+
+                    else if (ButtonParallelIsChecked)
                         await SearchEngine.FindFilesParallel(TargetDirectory, SearchValue, ConcurrentOperationCount, progress, cts.Token);
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        WriteInConsole("Canceled");
-                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    WriteInConsole("Canceled");
                 }
 
                 stopwatch.Stop();
+                progressThrottler.FinishReporting();
                 WriteInConsole($"Time elapsed: {stopwatch.ElapsedMilliseconds / 1000.0} seconds");
                 WriteConsoleSeparator();
                 CanSearch = true;
                 CanStop = false;
                 ProgressValue = 100;
-            }
-            else
-            {
-                WriteInConsole("Selected directory does not exist");
             }
         }
 
@@ -227,11 +221,11 @@ namespace MvxStarter.Core.ViewModels
             for (int i = 0; i < e.FoundFiles.Count; i++)
             {
                 WriteFoundFiles(e.FoundFiles[i]);
+            }
 
-                if (e.PercentageComplete > ProgressValue)
-                {
-                    ProgressValue = e.PercentageComplete;
-                }
+            if (e.PercentageComplete > ProgressValue)
+            {
+                ProgressValue = e.PercentageComplete;
             }
         }
 
