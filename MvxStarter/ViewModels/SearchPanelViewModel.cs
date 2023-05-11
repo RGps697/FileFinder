@@ -14,10 +14,10 @@ namespace MvxStarter.Core.ViewModels
     public class SearchPanelViewModel : MvxViewModel
     {
         private string _searchValue;
-        private string _targetDirectory = "C:\\Program Files\\Blender Foundation\\Blender 2.82";
+        private string _targetDirectory = "C:\\";
         private int _progressValue = 0;
         private bool _canSearch = true;
-        private bool _canStop = false;
+        private bool _isSearchInProgress = false;
         private bool _buttonMainThreadIsChecked = true;
         private bool _buttonSeparateThreadIsChecked;
         private bool _buttonParallelIsChecked;
@@ -32,6 +32,10 @@ namespace MvxStarter.Core.ViewModels
         {
             get { return _searchValue; }
             set { _searchValue = value; }
+        }
+        public string SearchValueArgument
+        {
+            get { return $"*{_searchValue}*"; }
         }
         public string TargetDirectory
         {
@@ -58,19 +62,20 @@ namespace MvxStarter.Core.ViewModels
         public bool CanSearch
         {
             get { return _canSearch; }
-            set 
+            private set 
             { 
                 _canSearch = value;
                 RaisePropertyChanged(() => CanSearch);
             }
         }
-        public bool CanStop
+        public bool IsSearchInProgress
+
         {
-            get { return _canStop; }
-            set 
+            get { return _isSearchInProgress; }
+            private set 
             { 
-                _canStop = value;
-                RaisePropertyChanged(() => CanStop);
+                _isSearchInProgress = value;
+                RaisePropertyChanged(() => IsSearchInProgress);
             }
         }
         public bool ButtonMainThreadIsChecked
@@ -160,29 +165,26 @@ namespace MvxStarter.Core.ViewModels
             else
             {
                 ProgressValue = 0;
-                CanSearch = false;
-                CanStop = true;
+                SwitchSearchState();
                 FoundFiles.Clear();
                 Progress<ProgressReportModel> progress = new Progress<ProgressReportModel>();
                 progress.ProgressChanged += ReportProgress;
                 ProgressThrottler progressThrottler = new ProgressThrottler(progress);
                 cts = new CancellationTokenSource();
                 WriteInConsole($"Search in directory: {TargetDirectory}. File name: {SearchValue}.");
-                List<FileModel>? result;
 
                 var stopwatch = new Stopwatch();
                 stopwatch.Start();
-
                 try
                 {
                     if (ButtonMainThreadIsChecked)
-                        result = SearchEngine.FindFiles(TargetDirectory, SearchValue, progress, cts.Token);
+                        SearchEngine.FindFiles(TargetDirectory, SearchValueArgument, progressThrottler, cts.Token);
 
                     else if (ButtonSeparateThreadIsChecked)
-                        result = await Task.Run(() => SearchEngine.FindFiles(TargetDirectory, SearchValue, progress, cts.Token));
+                        await Task.Run(() => SearchEngine.FindFiles(TargetDirectory, SearchValueArgument, progressThrottler, cts.Token));
 
                     else if (ButtonParallelIsChecked)
-                        await SearchEngine.FindFilesParallel(TargetDirectory, SearchValue, ConcurrentOperationCount, progress, cts.Token);
+                        await SearchEngine.FindFilesParallel(TargetDirectory, SearchValueArgument, ConcurrentOperationCount, progressThrottler, cts.Token);
                 }
                 catch (OperationCanceledException)
                 {
@@ -193,17 +195,13 @@ namespace MvxStarter.Core.ViewModels
                 progressThrottler.FinishReporting();
                 WriteInConsole($"Time elapsed: {stopwatch.ElapsedMilliseconds / 1000.0} seconds");
                 WriteConsoleSeparator();
-                CanSearch = true;
-                CanStop = false;
-                ProgressValue = 100;
+                SwitchSearchState();
             }
         }
 
         public void StopSearch()
         {
             cts.Cancel();
-            CanSearch = true;
-            CanStop = false;
         }
 
         private void WriteInConsole(string text)
@@ -232,6 +230,12 @@ namespace MvxStarter.Core.ViewModels
         private void WriteFoundFiles(FileModel item)
         {
             FoundFiles.Add(item);
+        }
+
+        private void SwitchSearchState()
+        {
+            CanSearch = !CanSearch;
+            IsSearchInProgress = !IsSearchInProgress;
         }
     }
 }

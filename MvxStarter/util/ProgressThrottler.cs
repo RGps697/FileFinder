@@ -11,6 +11,7 @@ namespace MvxStarter.Core.util
         private readonly IProgress<ProgressReportModel> _progress;
         private readonly Stopwatch _stopwatch = new Stopwatch();
         private List<FileModel> _filesToReport = new List<FileModel>();
+        private int _lastItem = 0;
 
         public ProgressThrottler(IProgress<ProgressReportModel> progress)
         {
@@ -28,28 +29,36 @@ namespace MvxStarter.Core.util
             else if (_stopwatch.ElapsedMilliseconds > 500)
             {
                 _stopwatch.Restart();
+                Debug.WriteLine("reporting..");
+
                 ProgressReportModel report = new ProgressReportModel()
                 {
                     PercentageComplete = value.PercentageComplete
                 };
-                for (int i = 0; i < _filesToReport.Count; i++)
-                {
-                    report.FoundFiles.Add(new FileModel(_filesToReport[i].Name));
-                }
+                report.FoundFiles.AddRange(ReportNewest());
                 _progress.Report(report);
-                _filesToReport.Clear();
             }
         }
 
         public void FinishReporting()
         {
             _stopwatch.Stop();
+            Debug.WriteLine("finishing reporting...");
             ProgressReportModel report = new ProgressReportModel()
             {
                 PercentageComplete = 100,
-                FoundFiles = _filesToReport
+                FoundFiles = ReportNewest()
             };
             _progress.Report(report);
+        }
+
+        private List<FileModel> ReportNewest()
+        {
+            int startingIndex = _lastItem;
+            _lastItem = _filesToReport.Count;
+            int lastIndex = _lastItem;
+            Debug.WriteLine($"Reporting items from: {startingIndex}, count: {lastIndex-startingIndex}, last: {lastIndex}");
+            return _filesToReport.GetRange(startingIndex, lastIndex - startingIndex);
         }
     }
 }

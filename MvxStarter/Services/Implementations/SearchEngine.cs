@@ -23,21 +23,19 @@ namespace MvxStarter.Core.Services.Implementations
             ConsoleOutput = writeInConsole;
         }
 
-        public List<FileModel>? FindFiles(string searchPath, string fileName, IProgress<ProgressReportModel> progress, CancellationToken cancellationToken)
+        public void FindFiles(string searchPath, string fileName, IProgress<ProgressReportModel> progress, CancellationToken cancellationToken)
         {
             ConsoleOutput($"Searching for files synchronously...");
             directoriesSearched = 0;
             GetAllSubdirectories(searchPath, cancellationToken);
             try
             {
-                List<FileModel> files = SearchDirectoryRecursive(searchPath, fileName, progress);
+                SearchDirectoryRecursive(searchPath, fileName, progress);
                 ConsoleOutput($"Directories searched: {directoriesSearched}");
-                return files;
             }
             catch (OperationCanceledException)
             {
                 ConsoleOutput("Canceled");
-                return null;
             }
         }
 
@@ -85,33 +83,15 @@ namespace MvxStarter.Core.Services.Implementations
 
                 directoriesToSearch.AddRange(subdirectories);
             }
-            catch (OperationCanceledException)
-            {
-
-            }
+            catch (OperationCanceledException) { }
             catch (UnauthorizedAccessException)
             {
-
+                Debug.WriteLine($"Cannot access directory: {directoryPath}");
             }
+            catch (IOException) { }
         }
 
-        private async Task GetAllSubdirectoriesAsync(string directoryPath, CancellationToken cancellationToken)
-        {
-            List<string> subdirectories = new List<string>();
-
-            cancellationToken.ThrowIfCancellationRequested();
-
-            subdirectories.AddRange(Directory.GetDirectories(directoryPath));
-            for (int i = 0; i < subdirectories.Count; i++)
-            {
-                int currentIndex = i;
-                GetAllSubdirectoriesAsync(subdirectories[i], cancellationToken);
-            }
-
-            directoriesToSearch.AddRange(subdirectories);
-        }
-
-        private List<FileModel> SearchDirectoryRecursive(string directoryPath, string fileName, IProgress<ProgressReportModel> progress)
+        private void SearchDirectoryRecursive(string directoryPath, string fileName, IProgress<ProgressReportModel> progress)
         {
             try
             {
@@ -121,30 +101,20 @@ namespace MvxStarter.Core.Services.Implementations
 
                 if (foundFilesInDirectory.Length > 0)
                 {
-                    ProgressReportModel report = new ProgressReportModel();
                     for (int i = 0; i < foundFilesInDirectory.Length; i++)
                     {
                         foundFiles.Add(new FileModel(foundFilesInDirectory[i]));
                     }
-                    report.PercentageComplete = directoriesSearched * 100 / directoriesToSearch.Count;
-                    report.FoundFiles.AddRange(foundFiles);
-                    progress.Report(report);
                 }
+                ProgressReportModel report = new ProgressReportModel();
+                report.PercentageComplete = directoriesSearched * 100 / directoriesToSearch.Count;
+                report.FoundFiles.AddRange(foundFiles);
+                progress.Report(report);
                 string[] directories = Directory.GetDirectories(directoryPath);
-                for (int i = 0; i < directories.Length; i++)
-                {
-                    foundFiles.AddRange(SearchDirectoryRecursive(directories[i], fileName, progress));
-                }
-                return foundFiles;
             }
-            catch (UnauthorizedAccessException)
-            {
-                return new List<FileModel>();
-            }
-            catch (DirectoryNotFoundException)
-            {
-                return new List<FileModel>();
-            }
+            catch (UnauthorizedAccessException) { }
+            catch (DirectoryNotFoundException) { }
+            catch (IOException) { }
         }
 
         private void SearchDirectory(string directoryPath, string fileName, IProgress<ProgressReportModel> progress)
@@ -159,7 +129,6 @@ namespace MvxStarter.Core.Services.Implementations
                     {
                         foundFiles[i] = new FileModel(foundFilesInDirectory[i]);
                     }
-
                 }
                 ProgressReportModel report = new ProgressReportModel();
                 report.PercentageComplete = directoriesSearched * 100 / directoriesToSearch.Count;
@@ -168,12 +137,10 @@ namespace MvxStarter.Core.Services.Implementations
             }
             catch (UnauthorizedAccessException)
             {
-
+                Debug.WriteLine($"Cannot access directory: {directoryPath}");
             }
-            catch (DirectoryNotFoundException)
-            {
-
-            }
+            catch (DirectoryNotFoundException) { }
+            catch (IOException) { }
         }
     }
 }

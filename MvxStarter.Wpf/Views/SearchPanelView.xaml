@@ -10,8 +10,6 @@
              xmlns:fa="http://schemas.fontawesome.io/icons/"
              mc:Ignorable="d" 
              d:DesignHeight="650" d:DesignWidth="1200">
-    <views:MvxWpfView.Resources>
-    </views:MvxWpfView.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="20"></ColumnDefinition>
@@ -35,8 +33,8 @@
         </Grid.RowDefinitions>
         <!-- Row 1 -->
         <TextBlock Text="Location:" Grid.Column="1" Grid.Row="1" TextAlignment="Left" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0 0 10 0"></TextBlock>
-        <TextBox x:Name="DirectoryPath" Text="{Binding TargetDirectory, Mode=TwoWay}" Grid.Column="2" Grid.Row="1" Grid.ColumnSpan="2" MinWidth="100" Margin="0 10 0 10" FontSize="20"></TextBox>
-        <Button Grid.Column="4" Grid.Row="1" MinWidth="50" Margin="0 10 0 10" Click="Button_Click">
+        <TextBox x:Name="DirectoryPath" Text="{Binding TargetDirectory, Mode=TwoWay}" Grid.Column="2" Grid.Row="1" Grid.ColumnSpan="2" IsEnabled="{Binding CanSearch, Mode=OneWay}" MinWidth="100" Margin="0 10 0 10" FontSize="20"></TextBox>
+        <Button IsEnabled="{Binding CanSearch, Mode=OneWay}" Grid.Column="4" Grid.Row="1" MinWidth="50" Margin="0 10 0 10" Click="Button_Click">
             <fa:ImageAwesome Icon="Folder" Width="20"/>
         </Button>
         <Border Grid.Column="5" Grid.Row="1" Grid.RowSpan="7" Margin="10 0 0 0" Width="400" BorderBrush="Gray" BorderThickness="2">
@@ -46,29 +44,29 @@
         </Border>
         <!-- Row 2 -->
         <TextBlock Text="File:" Grid.Column="1" Grid.Row="2" TextAlignment="Left" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0 0 10 0"></TextBlock>
-        <TextBox Text="{Binding SearchValue, Mode=OneWayToSource}" Grid.Column="2" Grid.Row="2" Grid.ColumnSpan="3" MinWidth="100" Margin="0 10 0 10" FontSize="20"></TextBox>
+        <TextBox Text="{Binding SearchValue, Mode=OneWayToSource}" Grid.Column="2" Grid.Row="2" Grid.ColumnSpan="3" IsEnabled="{Binding CanSearch, Mode=OneWay}" MinWidth="100" Margin="0 10 0 10" FontSize="20"></TextBox>
         <!-- Row 3 -->
         <Border Grid.Column="1" Grid.Row="3" Grid.ColumnSpan="4" Height="30" BorderBrush="Gray" BorderThickness="2" Margin="0 3 0 3">
             <StackPanel Orientation="Horizontal">
-                <RadioButton Content="Main thread" IsChecked="{Binding ButtonMainThreadIsChecked, Mode=TwoWay}" VerticalContentAlignment="Center" Margin="6 0 0 0"></RadioButton>
-                <RadioButton Content="Separate thread" IsChecked="{Binding ButtonSeparateThreadIsChecked, Mode=TwoWay}" VerticalContentAlignment="Center" Margin="6 0 0 0"></RadioButton>
-                <RadioButton Content="Parallel" IsChecked="{Binding ButtonParallelIsChecked, Mode=TwoWay}" VerticalContentAlignment="Center" Margin="6 0 0 0"></RadioButton>
+                <RadioButton Content="Main thread" IsChecked="{Binding ButtonMainThreadIsChecked, Mode=TwoWay}" IsEnabled="{Binding CanSearch, Mode=OneWay}" VerticalContentAlignment="Center" Margin="6 0 0 0"></RadioButton>
+                <RadioButton Content="Separate thread" IsChecked="{Binding ButtonSeparateThreadIsChecked, Mode=TwoWay}" IsEnabled="{Binding CanSearch, Mode=OneWay}" VerticalContentAlignment="Center" Margin="6 0 0 0"></RadioButton>
+                <RadioButton Content="Parallel" IsChecked="{Binding ButtonParallelIsChecked, Mode=TwoWay}" IsEnabled="{Binding CanSearch, Mode=OneWay}" VerticalContentAlignment="Center" Margin="6 0 0 0"></RadioButton>
             </StackPanel>
         </Border>
         <!-- Row 4 -->
         <TextBlock Text="{Binding ElementName=OperationSlider, Path=Value}" Grid.Column="1" Grid.Row="4" Width="30" VerticalAlignment="Center" Visibility="{Binding ButtonParallelIsChecked, Converter={StaticResource BoolToVis}}"></TextBlock>
-        <Slider Name="OperationSlider" Value="{Binding ConcurrentOperationCount, Mode=TwoWay}" Minimum="1" Grid.Column="2" Grid.Row="4" Grid.ColumnSpan="2" Margin="0 10" IsEnabled="{Binding ButtonParallelIsChecked, Mode=TwoWay}"></Slider>
+        <Slider Name="OperationSlider" Value="{Binding ConcurrentOperationCount, Mode=TwoWay}" Minimum="1" Grid.Column="2" Grid.Row="4" Grid.ColumnSpan="2" Margin="0 10" IsEnabled="{Binding CanSearch, Mode=OneWay}" Visibility="{Binding ButtonParallelIsChecked, Converter={StaticResource BoolToVis}}"></Slider>
         <!-- Row 5 -->
         <Border Grid.Column="1" Grid.Row="5" Grid.ColumnSpan="4" Height="50" BorderBrush="Gray" BorderThickness="2" Margin="0 3 0 3">
             <StackPanel Orientation="Horizontal">
                 <Button mvx:Bi.nd="Command FindFilesCommand" IsEnabled="{Binding CanSearch, Mode=OneWay}" Margin="3" Width="100" Content="Find"></Button>
-                <Button mvx:Bi.nd="Command StopSearchCommand" IsEnabled="{Binding CanStop, Mode=OneWay}" Margin="3" Width="100" Content="Stop"></Button>
+                <Button mvx:Bi.nd="Command StopSearchCommand" IsEnabled="{Binding IsSearchInProgress, Mode=OneWay}" Margin="3" Width="100" Content="Stop"></Button>
             </StackPanel>
         </Border>
         <!-- Row 6 -->
         <ProgressBar Value="{Binding ProgressValue, Mode=OneWay}" Grid.Column="1" Grid.Row="6" Grid.ColumnSpan="4" Height="20"></ProgressBar>
         <!-- Row 7 -->
-        <ListView ItemsSource="{Binding FoundFiles, Mode=TwoWay}" Grid.Column="1" Grid.Row="7" Grid.ColumnSpan="4">
+        <ListView MouseDoubleClick="ListView_MouseDoubleClick" ItemsSource="{Binding FoundFiles, Mode=TwoWay}" Grid.Column="1" Grid.Row="7" Grid.ColumnSpan="4">
             <ListView.View>
                 <GridView>
                     <GridViewColumn DisplayMemberBinding="{Binding Name}" Header="Name" Width="300" />

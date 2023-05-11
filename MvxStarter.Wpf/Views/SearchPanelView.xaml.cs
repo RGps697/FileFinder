@@ -17,6 +17,8 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Windows.Forms;
+using System.Windows.Controls.Primitives;
+using MvxStarter.Core.Models;
 
 namespace MvxStarter.Wpf.Views
 {
@@ -40,6 +42,16 @@ namespace MvxStarter.Wpf.Views
                 DirectoryPath.Text = folderBrowserDialog.SelectedPath;
                 DirectoryPath.GetBindingExpression(System.Windows.Controls.TextBox.TextProperty)
                    .UpdateSource();
+            }
+        }
+
+        private void ListView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            var item = ((FrameworkElement)e.OriginalSource).DataContext as FileModel; //<< your class name here
+
+            if (item != null)
+            {
+                System.Diagnostics.Process.Start("explorer", System.IO.Path.GetDirectoryName(item.Name));
             }
         }
     }
