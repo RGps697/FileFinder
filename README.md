@@ -1,6 +1,6 @@
 # FileFinder
 ## About The Project
-This is desktop application designed with purpose of finding files on device's disks using synchronous and parallel methods. 
+This is a desktop application designed with purpose of finding files on device's disks using synchronous and parallel methods. 
 
 ### Built With
 

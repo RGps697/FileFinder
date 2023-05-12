@@ -31,11 +31,16 @@ namespace MvxStarter.Core.Services.Implementations
             try
             {
                 SearchDirectoryRecursive(searchPath, fileName, progress);
-                ConsoleOutput($"Directories searched: {directoriesSearched}");
             }
             catch (OperationCanceledException)
             {
                 ConsoleOutput("Canceled");
+            }
+            finally
+            {
+                ConsoleOutput($"Directories searched: {directoriesSearched}");
+                directoriesToSearch.Clear();
+                directoriesSearched = 0;
             }
         }
 
@@ -58,9 +63,12 @@ namespace MvxStarter.Core.Services.Implementations
                 {
                     ConsoleOutput("Canceled");
                 }
-                ConsoleOutput($"Directories searched: {directoriesToSearch.Count}");
-                directoriesToSearch.Clear();
-                directoriesSearched = 0;
+                finally
+                {
+                    ConsoleOutput($"Directories searched: {directoriesToSearch.Count}");
+                    directoriesToSearch.Clear();
+                    directoriesSearched = 0;
+                }
             });
         }
 
@@ -111,6 +119,10 @@ namespace MvxStarter.Core.Services.Implementations
                 report.FoundFiles.AddRange(foundFiles);
                 progress.Report(report);
                 string[] directories = Directory.GetDirectories(directoryPath);
+                for (int i = 0; i < directories.Length; i++)
+                {
+                    SearchDirectoryRecursive(directories[i], fileName, progress);
+                }
             }
             catch (UnauthorizedAccessException) { }
             catch (DirectoryNotFoundException) { }
